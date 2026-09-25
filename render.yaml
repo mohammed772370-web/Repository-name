@@ -1,0 +1,25 @@
+services:
+  - type: worker
+    name: trading-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: CHANNEL_ID
+        value: "@Trading_TOB"
+      - key: ADMIN_IDS
+        sync: false
+      - key: TIMEZONE
+        value: Asia/Riyadh
+      - key: EDUCATION_POST_TIMES
+        value: "10:00,18:00"
+      - key: NEWS_POST_TIMES
+        value: "08:00,14:00,20:00"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: llama-3.1-8b-instant
+      - key: OPENAI_BASE_URL
+        value: https://api.groq.com/openai/v1

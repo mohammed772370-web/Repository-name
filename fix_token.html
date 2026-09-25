@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>فحص توكن البوت - @Trading_TOB</title>
+<style>
+body { background:#0f172a; color:white; font-family:sans-serif; padding:20px; max-width:600px; margin:0 auto; }
+input { width:100%; padding:15px; border-radius:10px; border:1px solid #334155; background:#1e293b; color:white; margin:10px 0; font-size:16px; }
+button { width:100%; padding:15px; border-radius:10px; border:none; background:#0ea5e9; color:white; font-size:18px; font-weight:bold; cursor:pointer; margin:10px 0; }
+button:active { background:#0284c7; }
+.alert { padding:15px; border-radius:10px; margin:15px 0; }
+.success { background:#052e16; border:1px solid #16a34a; color:#bbf7d0; }
+.error { background:#450a0a; border:1px solid #dc2626; color:#fecaca; }
+.info { background:#0c1a2e; border:1px solid #0ea5e9; color:#bae6fd; }
+pre { background:#1e293b; padding:10px; border-radius:8px; overflow:auto; font-size:12px; }
+</style>
+</head>
+<body>
+
+<h1>🔧 فحص توكن البوت</h1>
+<p>قناتك: @Trading_TOB</p>
+
+<div class="alert info">
+<strong>كيف تنسخ التوكن الصحيح من @BotFather؟</strong><br>
+1. افتح @BotFather في تليجرام<br>
+2. اكتب /mybots<br>
+3. اختر بوتك<br>
+4. اضغط API Token<br>
+5. <strong>اضغط على التوكن نفسه لنسخه تلقائياً</strong> (لا تنسخ الكلام اللي فوقه!)<br><br>
+التوكن شكله: <code>1234567890:AAHdqTcv...</code><br>
+يبدأ بأرقام ثم : ثم حروف طويلة
+</div>
+
+<label>🔑 الصق التوكن هنا:</label>
+<input type="text" id="token" placeholder="1234567890:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw">
+
+<button onclick="testToken()">🔍 فحص التوكن الآن</button>
+
+<div id="result"></div>
+
+<div class="alert info" style="margin-top:20px;">
+<strong>💡 أخطاء شائعة:</strong><br>
+❌ تنسخ مع التوكن كلمة "Use this token..." → انسخ الرمز فقط<br>
+❌ فيه مسافة في البداية أو النهاية → احذفها<br>
+❌ التوكن قديم → اعمل Revoke في @BotFather وخذ جديد<br>
+❌ البوت ليس مشرف في القناة → اجعله مشرف مع صلاحية نشر
+</div>
+
+<script>
+async function testToken() {
+    const token = document.getElementById('token').value.trim();
+    const resultDiv = document.getElementById('result');
+    
+    if(!token) {
+        resultDiv.innerHTML = '<div class="alert error">❌ الصق التوكن أولاً</div>';
+        return;
+    }
+    
+    if(!token.includes(':')) {
+        resultDiv.innerHTML = '<div class="alert error">❌ شكل التوكن غلط! لازم يحتوي على :<br>مثال: 1234567890:AAHdqTcv...<br>تأكد أنك نسخت من @BotFather بشكل صحيح</div>';
+        return;
+    }
+    
+    resultDiv.innerHTML = '<div class="alert info">⏳ جاري فحص التوكن...</div>';
+    
+    try {
+        const url = `https://api.telegram.org/bot${token}/getMe`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        console.log(data);
+        
+        if(data.ok) {
+            const bot = data.result;
+            resultDiv.innerHTML = `
+                <div class="alert success">
+                    ✅ <strong>التوكن صحيح 100%!</strong><br><br>
+                    🤖 اسم البوت: ${bot.first_name}<br>
+                    🔗 يوزر البوت: @${bot.username}<br>
+                    🆔 ايدي البوت: ${bot.id}<br><br>
+                    <strong>الآن انسخ هذا التوكن وضعه في:</strong><br>
+                    1. لوحة التحكم (Live Preview)<br>
+                    2. GitHub Secrets → BOT_TOKEN<br><br>
+                    ✅ جاهز للنشر في @Trading_TOB!
+                </div>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        } else {
+            let reason = '';
+            if(data.error_code === 401) {
+                reason = 'التوكن غير صحيح أو منتهي - اذهب لـ @BotFather وخذ توكن جديد';
+            } else {
+                reason = data.description;
+            }
+            
+            resultDiv.innerHTML = `
+                <div class="alert error">
+                    ❌ <strong>التوكن غير صحيح</strong><br><br>
+                    الخطأ: ${data.description}<br>
+                    الكود: ${data.error_code}<br><br>
+                    <strong>الحل:</strong> ${reason}
+                </div>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        }
+    } catch(err) {
+        resultDiv.innerHTML = `
+            <div class="alert error">
+                ❌ خطأ في الاتصال: ${err.message}<br><br>
+                جرب مرة ثانية أو تأكد من النت
+            </div>
+        `;
+    }
+}
+</script>
+
+<hr style="margin:30px 0; border:1px solid #334155;">
+
+<h2>🤖 GitHub Actions - النشر التلقائي</h2>
+
+<div class="alert success">
+<strong>هذا اللي تقصده! GitHub Actions</strong><br>
+يخلي GitHub ينشر لقناتك تلقائياً بدون سيرفر!
+</div>
+
+<p><strong>من جوالك:</strong></p>
+<ol style="line-height:2;">
+<li>ادخل مستودعك: github.com/mohammed772370-web/Repository-name</li>
+<li>Settings → Secrets and variables → Actions</li>
+<li>New secret → Name: BOT_TOKEN → Value: التوكن الصحيح → Add</li>
+<li>New secret → Name: CHANNEL_ID → Value: @Trading_TOB → Add</li>
+<li>اذهب لـ Actions → Enable workflows</li>
+<li>اضغط "📱 نشر يدوي من الجوال" → Run workflow → Run</li>
+<li>خلال 30 ثانية ينشر في قناتك!</li>
+</ol>
+
+<p>وسينشر تلقائياً كل يوم:<br>
+08:00 أخبار - 10:00 درس - 14:00 أخبار - 18:00 درس - 20:00 ملخص</p>
+
+<a href="https://github.com/mohammed772370-web/Repository-name/actions" target="_blank">
+<button style="background:#22c55e;">📱 فتح GitHub Actions الآن</button>
+</a>
+
+</body>
+</html>

@@ -1,0 +1,13 @@
+.env
+bot_data.json
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.env.local
+*.log
+.DS_Store
+bot_data_backup.json
+*.db
+*.sqlite

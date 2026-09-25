@@ -1,0 +1,16 @@
+run = "python main.py"
+language = "python3"
+
+[env]
+PYTHON_LD_LIBRARY_PATH = ""
+
+[unitTest]
+language = "python3"
+
+[deployment]
+run = ["python", "main.py"]
+deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 5000
+externalPort = 80

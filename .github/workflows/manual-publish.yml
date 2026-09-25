@@ -1,0 +1,47 @@
+name: 📱 نشر يدوي من الجوال
+
+on:
+  workflow_dispatch:
+    inputs:
+      type:
+        description: 'ماذا تريد أن تنشر الآن؟'
+        required: true
+        default: 'education'
+        type: choice
+        options:
+          - education - درس تعليمي
+          - news - أخبار اليوم
+          - motivational - منشور تحفيزي
+          - market - افتتاح السوق
+          - test - اختبار التوكن فقط
+      day:
+        description: 'رقم اليوم (1-30) - للتعليم فقط'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  publish-now:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: تثبيت المكتبات
+        run: pip install -r requirements.txt
+      
+      - name: نشر الآن
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          TYPE=$(echo "${{ inputs.type }}" | cut -d' ' -f1)
+          echo "نشر: $TYPE"
+          if [ -n "${{ inputs.day }}" ]; then
+            python scripts/publish.py $TYPE --day ${{ inputs.day }}
+          else
+            python scripts/publish.py $TYPE
+          fi

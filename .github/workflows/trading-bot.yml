@@ -1,0 +1,125 @@
+name: 🤖 بوت @Trading_TOB - نشر تلقائي
+
+on:
+  # جدولة تلقائية - الأوقات بتوقيت UTC (الرياض = UTC+3)
+  schedule:
+    # 08:00 الرياض = 05:00 UTC - ملخص صباحي + افتتاح السوق
+    - cron: '0 5 * * *'
+    # 10:00 الرياض = 07:00 UTC - درس تعليمي صباحي
+    - cron: '0 7 * * *'
+    # 14:00 الرياض = 11:00 UTC - تحديث أخبار الظهر
+    - cron: '0 11 * * *'
+    # 18:00 الرياض = 15:00 UTC - درس تعليمي مسائي
+    - cron: '0 15 * * *'
+    # 20:00 الرياض = 17:00 UTC - ملخص مسائي
+    - cron: '0 17 * * *'
+    # 21:00 الرياض = 18:00 UTC - منشور تحفيزي (كل 3 أيام تقريباً - نفحص داخل الكود)
+    - cron: '0 18 * * *'
+
+  # تشغيل يدوي من الجوال - من تطبيق GitHub!
+  workflow_dispatch:
+    inputs:
+      publish_type:
+        description: 'نوع النشر'
+        required: true
+        default: 'education'
+        type: choice
+        options:
+          - education
+          - news
+          - motivational
+          - market
+          - test
+      day:
+        description: 'رقم اليوم (للتعليم فقط - اتركه فاضي للتلقائي)'
+        required: false
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 تحميل المشروع
+        uses: actions/checkout@v4
+
+      - name: 🐍 إعداد بايثون
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 📦 تثبيت المكتبات
+        run: |
+          pip install -r requirements.txt
+
+      - name: 🔍 اختبار التوكن (تشخيص)
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+        run: |
+          echo "فحص التوكن..."
+          python scripts/publish.py test || echo "⚠️ فحص التوكن فشل، لكن نكمل"
+
+      - name: 🤖 نشر تلقائي حسب الوقت
+        if: github.event_name == 'schedule'
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+          ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+        run: |
+          HOUR=$(date -u +%H)
+          echo "الساعة الحالية UTC: $HOUR"
+          
+          # تحديد نوع النشر حسب الساعة
+          if [ "$HOUR" = "05" ]; then
+            echo "🌅 وقت افتتاح السوق + ملخص صباحي"
+            python scripts/publish.py market || true
+            sleep 2
+            python scripts/publish.py news
+          elif [ "$HOUR" = "07" ]; then
+            echo "📚 وقت الدرس الصباحي"
+            python scripts/publish.py education
+          elif [ "$HOUR" = "11" ]; then
+            echo "📰 وقت أخبار الظهر"
+            python scripts/publish.py news
+          elif [ "$HOUR" = "15" ]; then
+            echo "📚 وقت الدرس المسائي"
+            python scripts/publish.py education
+          elif [ "$HOUR" = "17" ]; then
+            echo "📰 ملخص مسائي"
+            python scripts/publish.py news
+          elif [ "$HOUR" = "18" ]; then
+            echo "💪 منشور تحفيزي (مرة كل 3 أيام)"
+            # ننشر تحفيزي فقط إذا اليوم يقبل القسمة على 3
+            DAY=$(date +%d)
+            if [ $((DAY % 3)) -eq 0 ]; then
+              python scripts/publish.py motivational
+            else
+              echo "اليوم ليس يوم تحفيزي"
+            fi
+          fi
+
+      - name: 📱 نشر يدوي (من الجوال)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+          ADMIN_IDS: ${{ secrets.ADMIN_IDS }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+        run: |
+          echo "نشر يدوي: ${{ inputs.publish_type }}"
+          if [ "${{ inputs.publish_type }}" = "education" ] && [ -n "${{ inputs.day }}" ]; then
+            python scripts/publish.py education --day ${{ inputs.day }}
+          else
+            python scripts/publish.py ${{ inputs.publish_type }}
+          fi
+
+      - name: ✅ انتهى
+        run: |
+          echo "تم النشر لقناة @Trading_TOB"
+          echo "الوقت: $(date)"
